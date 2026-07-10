@@ -1,0 +1,31 @@
+name: update-stats
+
+on:
+  schedule:
+    - cron: "23 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pillow
+      - run: python fetch_stats.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: python gen_profile_svg.py
+      - name: commit if changed
+        run: |
+          git config user.name "King0James0"
+          git config user.email "King0James0@users.noreply.github.com"
+          git add stats.json profile.svg README.md
+          if ! git diff --cached --quiet; then
+            git commit -m "stats: daily refresh"
+            git push
+          fi
